@@ -8,6 +8,7 @@ const projectDir = resolve(process.env.COWART_PROJECT_DIR ?? process.cwd())
 const canvasDir = resolve(process.env.COWART_CANVAS_DIR ?? join(projectDir, 'canvas'))
 const canvasFile = join(canvasDir, 'cowart-canvas.json')
 const selectionFile = join(canvasDir, 'cowart-selection.json')
+const viewStateFile = join(canvasDir, 'cowart-view-state.json')
 const canvasPagesDir = join(canvasDir, 'pages')
 const canvasAssetsDir = join(canvasDir, 'assets')
 const pagesManifestFile = join(canvasPagesDir, 'manifest.json')
@@ -55,6 +56,24 @@ function isSnapshot(value) {
 
 function isSelectionState(value) {
   return value && typeof value === 'object' && Array.isArray(value.selectedShapes)
+}
+
+function isFiniteNumber(value) {
+  return typeof value === 'number' && Number.isFinite(value)
+}
+
+function isViewState(value) {
+  return (
+    value &&
+    typeof value === 'object' &&
+    value.version === 1 &&
+    (value.currentPageId === null || typeof value.currentPageId === 'string') &&
+    value.camera &&
+    typeof value.camera === 'object' &&
+    isFiniteNumber(value.camera.x) &&
+    isFiniteNumber(value.camera.y) &&
+    isFiniteNumber(value.camera.z)
+  )
 }
 
 function isSafeChildPath(parent, child) {
@@ -452,6 +471,53 @@ function canvasStoragePlugin() {
 
             await writeJsonAtomic(selectionFile, selection)
             sendJson(res, 200, { ok: true, path: selectionFile })
+            return
+          }
+
+          res.statusCode = 405
+          res.setHeader('allow', 'GET, PUT')
+          res.end()
+        } catch (error) {
+          sendJson(res, 500, { error: error.message })
+        }
+      })
+
+      server.middlewares.use('/api/view-state', async (req, res) => {
+        try {
+          if (req.method === 'GET') {
+            try {
+              sendJson(res, 200, {
+                viewState: await readJsonFile(viewStateFile),
+                path: viewStateFile
+              })
+            } catch (error) {
+              if (error.code === 'ENOENT') {
+                sendJson(res, 200, {
+                  viewState: {
+                    version: 1,
+                    currentPageId: null,
+                    camera: { x: 0, y: 0, z: 1 },
+                    updatedAt: null
+                  },
+                  path: viewStateFile
+                })
+                return
+              }
+              throw error
+            }
+            return
+          }
+
+          if (req.method === 'PUT') {
+            const body = await readRequestBody(req)
+            const viewState = JSON.parse(body)
+            if (!isViewState(viewState)) {
+              sendJson(res, 400, { error: 'Expected a Cowart view state.' })
+              return
+            }
+
+            await writeJsonAtomic(viewStateFile, viewState)
+            sendJson(res, 200, { ok: true, path: viewStateFile })
             return
           }
 

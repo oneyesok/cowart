@@ -1,6 +1,6 @@
 ---
 name: fill-ai-image-holder
-description: Generate an AI image into the selected Cowart "AI 图片" holder. Use when the user asks Codex to create, fill, replace, or place an AI-generated image inside the currently selected AI image placeholder on a Cowart canvas.
+description: Generate a final AI bitmap into the selected Cowart "AI 图片" holder, including any requested in-image text by default. Use when the user asks Codex to create, fill, replace, or place an AI-generated image inside the currently selected AI image placeholder on a Cowart canvas.
 ---
 
 # Fill AI Image Holder
@@ -67,7 +67,9 @@ meta flag. Support both shapes.
 
    If the holder is a legacy `geo` rectangle, keep using the legacy placement contract: same `x`, `y`, `rotation`, `parentId`, `props.w`, and `props.h` as the holder.
 
-4. Generate the bitmap with the built-in `imagegen` skill unless the user explicitly requests another image path. For project-bound output, copy the selected generated image from `$CODEX_HOME/generated_images/...` into the selected page's asset folder:
+4. Generate the bitmap with the built-in `imagegen` skill unless the user explicitly requests another image path. If the requested asset needs visible copy, labels, poster text, ad text, UI text, or typography, include that text directly in the image generation prompt and let the image model produce the final bitmap. Do not default to generating a text-free background and then adding text locally unless the user explicitly asks for local typography, deterministic text overlay, SVG/vector output, or another non-imagegen layout step.
+
+   For project-bound output, copy the selected generated image from `$CODEX_HOME/generated_images/...` into the selected page's asset folder:
 
    ```text
    canvas/pages/<page-id-without-page-prefix>/assets/

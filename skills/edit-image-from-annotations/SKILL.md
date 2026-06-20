@@ -1,6 +1,6 @@
 ---
 name: edit-image-from-annotations
-description: Generate new AI images from user-supplied Cowart annotation screenshots. Use when the user provides one or more screenshots showing Cowart images marked with the 批注 tool, arrows, or visible edit notes and wants Codex to apply those requested changes, create revised bitmap images, and place each result beside the corresponding original without replacing, moving, hiding, or deleting the original images or annotations.
+description: Generate new AI images from user-supplied Cowart annotation screenshots. Use when the user provides one or more screenshots showing Cowart images marked with the 批注 tool, arrows, or visible edit notes and wants Codex to apply those requested changes, create revised bitmap images, and place each result beside the corresponding original or in a nearby clear area without replacing, moving, hiding, or deleting the original images or annotations.
 ---
 
 # Edit Image From Annotations
@@ -37,7 +37,7 @@ The user is responsible for providing the relevant screenshot(s). Do not auto-ca
 
    If the screenshot is too cropped, obstructed, or low-resolution to serve as a good image base, ask the user for the original image export or a cleaner screenshot of that specific image.
 
-   Do not read the current Cowart canvas to discover which image the screenshot refers to. If placement back into Cowart is required, ask the user to select the corresponding original image or `AI 图片` frame before insertion.
+   Do not read the current Cowart canvas to discover edit intent. Use the screenshot for the requested changes. Cowart state may be read later only to place the generated result without covering existing content.
 
 4. Prepare image-generation input.
 
@@ -62,20 +62,23 @@ The user is responsible for providing the relevant screenshot(s). Do not auto-ca
 
    Add a new tldraw image asset and a new image shape. Do not update, remove, hide, reparent, or reorder the original image, the original `AI 图片` frame, or any annotation shapes.
 
-   Before insertion, require a clear placement anchor:
+   Prefer a clear placement anchor when one is already available:
 
    - If the user has selected the original image, use that image as the anchor.
    - If the user has selected the original `AI 图片` frame, use that frame as the anchor.
-   - If there are multiple screenshots/outputs, ask the user to select each corresponding anchor or provide an explicit placement order.
-   - If no anchor is clear, provide the generated image file and ask the user which original it should sit beside.
+   - If the screenshot clearly shows the original image and there is a unique matching generated/original image or `AI 图片` frame on the current Cowart page, use that as the anchor without asking the user to select it.
+   - If there are multiple screenshots/outputs and the matching anchors are not uniquely identifiable, ask the user to select each corresponding anchor or provide an explicit placement order.
+   - If no anchor is clear and the user has not required a specific side-by-side comparison, place the result in a nearby clear area on the current page where it does not cover, move, hide, or delete the original image or annotations.
 
    Placement rules:
 
    - If the source image is inside an `AI 图片` frame, use the frame's page-level bounds as the anchor and place the new image as a sibling of that frame.
    - Otherwise use the source image's own bounds and parent.
+   - When the annotated source appears to have earlier revision images nearby, prefer placing the new revised image to the right of the currently annotated/source image, because older annotation outputs may already live on the left.
    - Place the new image to the right of the anchor with a margin of about `40` canvas units.
    - Match the displayed width and height of the anchor unless the user asks for a different size.
    - If that position would overlap existing content, keep moving right by `anchor width + 40` until the new image is clear.
+   - If using a clear-area fallback with no anchor, keep the generated image near the annotated source page, match the likely source image size when known, and choose a position that does not overlap existing shapes.
 
    Recommended shape metadata:
 
@@ -89,7 +92,7 @@ The user is responsible for providing the relevant screenshot(s). Do not auto-ca
 
 7. Save through Cowart.
 
-   Only do Cowart state access after the bitmap is generated and the user has selected or identified the placement anchor. Use this access only to insert the new image beside that anchor, not to discover edit intent or choose among many annotated images.
+   Only do Cowart state access after the bitmap is generated. Use this access only to insert the new image beside the anchor or in a nearby clear area, not to discover edit intent.
 
    Prefer updating the required store snapshot and saving through:
 

@@ -34,7 +34,6 @@ import {
   XBoxToolbarItem,
   createShapeId,
   onDragFromToolbarToCreateShape,
-  renderPlaintextFromRichText,
   startEditingShapeWithRichText,
   toRichText,
   useEditor,
@@ -46,6 +45,7 @@ import { useCallback, useEffect, useState } from 'react'
 
 const CANVAS_ENDPOINT = '/api/canvas'
 const SELECTION_ENDPOINT = '/api/selection'
+const VIEW_STATE_ENDPOINT = '/api/view-state'
 const SELECTION_STATE_ELEMENT_ID = 'cowart-selection-state'
 const AI_IMAGE_TOOL_ID = 'ai-image'
 const AI_IMAGE_HOLDER_LABEL = 'AI 图片'
@@ -53,12 +53,12 @@ const AI_IMAGE_HOLDER_DEFAULT_W = 320
 const AI_IMAGE_HOLDER_DEFAULT_H = 220
 const ANNOTATION_TOOL_ID = 'cowart-annotation'
 const ANNOTATION_TOOL_LABEL = '批注'
-const ANNOTATION_TEXT_PLACEHOLDER = '输入批注'
 const ANNOTATION_DEFAULT_COLOR = 'yellow'
 const ANNOTATION_MIN_LENGTH = 8
 const ANNOTATION_BEND_RATIO = 0.12
 const ANNOTATION_MIN_BEND = 16
 const ANNOTATION_MAX_BEND = 48
+const ANNOTATION_LABEL_POSITION = 0
 const ANNOTATION_SELECT_TEXT_MAX_ATTEMPTS = 8
 const ANNOTATION_SELECT_TEXT_SETTLE_ATTEMPTS = 4
 
@@ -116,13 +116,36 @@ function startEditingAnnotationArrowLabel(editor, arrowId) {
 
   editor.select(arrowId)
   startEditingShapeWithRichText(editor, arrowId, { selectAll: true })
+  pinAnnotationArrowLabelPosition(editor, arrowId)
   editor.getCurrentTool().setCurrentToolIdMask(ANNOTATION_TOOL_ID)
   selectAnnotationTextWhenReady(editor, arrowId)
 }
 
-function lockCurrentTool(editor) {
-  if (editor.getInstanceState().isToolLocked) return
-  editor.updateInstanceState({ isToolLocked: true })
+function pinAnnotationArrowLabelPosition(editor, arrowId, attempt = 0) {
+  editor.timers.setTimeout(() => {
+    const shape = editor.getShape(arrowId)
+    if (!shape || shape.meta?.cowartAnnotationArrow !== true) return
+    if (shape.props.labelPosition !== ANNOTATION_LABEL_POSITION) {
+      editor.updateShapes([
+        {
+          id: arrowId,
+          type: 'arrow',
+          props: {
+            labelPosition: ANNOTATION_LABEL_POSITION
+          }
+        }
+      ])
+    }
+
+    if (attempt < 2 && editor.getEditingShapeId() === arrowId) {
+      pinAnnotationArrowLabelPosition(editor, arrowId, attempt + 1)
+    }
+  }, 16)
+}
+
+function unlockGlobalToolLock(editor) {
+  if (!editor.getInstanceState().isToolLocked) return
+  editor.updateInstanceState({ isToolLocked: false })
 }
 
 function selectAnnotationTextWhenReady(editor, arrowId, attempt = 0) {
@@ -164,7 +187,7 @@ function selectAnnotationTextRange(editor, arrowId) {
 
   const textNodes = getTextNodes(editable)
   if (textNodes.length === 0) {
-    return false
+    return doc.activeElement === editable || editable.contains(doc.activeElement)
   }
 
   const range = doc.createRange()
@@ -225,7 +248,7 @@ class CowartAnnotationTool extends StateNode {
   }
 
   onEnter() {
-    lockCurrentTool(this.editor)
+    unlockGlobalToolLock(this.editor)
   }
 }
 
@@ -282,8 +305,8 @@ class CowartAnnotationPointing extends StateNode {
         end: { x: 1, y: 0 },
         arrowheadStart: 'none',
         arrowheadEnd: 'arrow',
-        richText: toRichText(ANNOTATION_TEXT_PLACEHOLDER),
-        labelPosition: 0,
+        richText: toRichText(''),
+        labelPosition: ANNOTATION_LABEL_POSITION,
         font: 'draw',
         scale
       }
@@ -413,7 +436,7 @@ const cowartUiOverrides = {
         icon: 'tool-arrow',
         kbd: 'c',
         onSelect() {
-          lockCurrentTool(editor)
+          unlockGlobalToolLock(editor)
           editor.setCurrentTool(ANNOTATION_TOOL_ID)
         },
         meta: {
@@ -513,6 +536,39 @@ function getCowartSelectionSnapshot(editor) {
   }
 }
 
+function getCowartViewState(editor) {
+  const camera = editor.getCamera()
+  return {
+    version: 1,
+    currentPageId: editor.getCurrentPageId(),
+    camera: {
+      x: camera.x,
+      y: camera.y,
+      z: camera.z
+    }
+  }
+}
+
+function isRestorableViewState(viewState) {
+  return (
+    viewState &&
+    typeof viewState === 'object' &&
+    typeof viewState.currentPageId === 'string' &&
+    viewState.camera &&
+    Number.isFinite(viewState.camera.x) &&
+    Number.isFinite(viewState.camera.y) &&
+    Number.isFinite(viewState.camera.z)
+  )
+}
+
+function restoreCowartViewState(editor, viewState) {
+  if (!isRestorableViewState(viewState)) return
+  if (!editor.getPage(viewState.currentPageId)) return
+
+  editor.setCurrentPage(viewState.currentPageId)
+  editor.setCamera(viewState.camera, { immediate: true, force: true })
+}
+
 function writeCowartSelectionState(selectionSnapshot) {
   let stateElement = document.getElementById(SELECTION_STATE_ELEMENT_ID)
   if (!stateElement) {
@@ -572,6 +628,7 @@ function getAiImageFrameChildUpdates(editor) {
 
 export default function App() {
   const [snapshot, setSnapshot] = useState()
+  const [viewState, setViewState] = useState()
   const [loadError, setLoadError] = useState(null)
 
   useEffect(() => {
@@ -579,16 +636,27 @@ export default function App() {
 
     async function loadCanvas() {
       try {
-        const response = await fetch(CANVAS_ENDPOINT, { signal: controller.signal })
-        if (!response.ok) {
-          throw new Error(`Failed to load canvas: ${response.status}`)
+        const [canvasResponse, viewStateResponse] = await Promise.all([
+          fetch(CANVAS_ENDPOINT, { signal: controller.signal }),
+          fetch(VIEW_STATE_ENDPOINT, { signal: controller.signal })
+        ])
+        if (!canvasResponse.ok) {
+          throw new Error(`Failed to load canvas: ${canvasResponse.status}`)
         }
-        const data = await response.json()
-        setSnapshot(data.snapshot ?? null)
+        if (!viewStateResponse.ok) {
+          throw new Error(`Failed to load canvas view state: ${viewStateResponse.status}`)
+        }
+        const [canvasData, viewStateData] = await Promise.all([
+          canvasResponse.json(),
+          viewStateResponse.json()
+        ])
+        setSnapshot(canvasData.snapshot ?? null)
+        setViewState(viewStateData.viewState ?? null)
       } catch (error) {
         if (error.name === 'AbortError') return
         setLoadError(error)
         setSnapshot(null)
+        setViewState(null)
       }
     }
 
@@ -600,9 +668,17 @@ export default function App() {
   const handleMount = useCallback((editor) => {
     window.__cowartEditor = editor
     window.__cowartSelection = () => getCowartSelection(editor)
+    window.__cowartViewState = () => getCowartViewState(editor)
     let lastSyncedSelectionState = ''
     let isSelectionStateSaving = false
     let hasPendingSelectionState = false
+    let lastSyncedViewState = ''
+    let isViewStateSaving = false
+    let hasPendingViewState = false
+
+    editor.timers.requestAnimationFrame(() => {
+      restoreCowartViewState(editor, viewState)
+    })
 
     async function syncSelectionState() {
       const selectionSnapshot = getCowartSelectionSnapshot(editor)
@@ -644,12 +720,50 @@ export default function App() {
     syncSelectionState()
     const selectionStateTimer = window.setInterval(syncSelectionState, 250)
 
+    async function syncViewState() {
+      const viewStateSnapshot = {
+        ...getCowartViewState(editor),
+        updatedAt: new Date().toISOString()
+      }
+
+      const nextViewState = JSON.stringify(viewStateSnapshot)
+      if (nextViewState === lastSyncedViewState) return
+      lastSyncedViewState = nextViewState
+
+      if (isViewStateSaving) {
+        hasPendingViewState = true
+        return
+      }
+
+      isViewStateSaving = true
+      try {
+        const response = await fetch(VIEW_STATE_ENDPOINT, {
+          method: 'PUT',
+          headers: { 'content-type': 'application/json' },
+          body: nextViewState
+        })
+        if (!response.ok) {
+          throw new Error(`Failed to save view state: ${response.status}`)
+        }
+      } catch (error) {
+        console.error(error)
+      } finally {
+        isViewStateSaving = false
+        if (hasPendingViewState) {
+          hasPendingViewState = false
+          syncViewState()
+        }
+      }
+    }
+
+    const viewStateTimer = window.setInterval(syncViewState, 500)
+    editor.timers.setTimeout(syncViewState, 100)
+
     let saveTimer = null
     let isSaving = false
     let hasPendingSave = false
     let hasUnsavedChanges = false
     let isSyncingAiImageFrameChildren = false
-    let isReplacingAnnotationPlaceholder = false
     let isSyncingAnnotationLabelColor = false
 
     function syncAiImageFrameChildren() {
@@ -717,7 +831,6 @@ export default function App() {
 
           const shape = editor.getShape(previous.editingShapeId)
           if (shape?.meta?.cowartAnnotationArrow !== true) continue
-          if (!editor.getInstanceState().isToolLocked) continue
 
           editor.timers.requestAnimationFrame(() => {
             if (editor.getEditingShapeId()) return
@@ -729,50 +842,6 @@ export default function App() {
       {
         source: 'all',
         scope: 'session'
-      }
-    )
-
-    const unsubscribeAnnotationPlaceholderReplacement = editor.store.listen(
-      ({ changes }) => {
-        if (isReplacingAnnotationPlaceholder) return
-
-        const replacements = []
-        for (const [previous, next] of Object.values(changes.updated)) {
-          if (previous?.typeName !== 'shape' || next?.typeName !== 'shape') continue
-          if (previous.type !== 'arrow' || next.type !== 'arrow') continue
-          if (next.meta?.cowartAnnotationArrow !== true) continue
-          if (!previous.props?.richText || !next.props?.richText) continue
-
-          const previousText = renderPlaintextFromRichText(editor, previous.props.richText)
-          if (previousText !== ANNOTATION_TEXT_PLACEHOLDER) continue
-
-          const nextText = renderPlaintextFromRichText(editor, next.props.richText)
-          if (!nextText.startsWith(ANNOTATION_TEXT_PLACEHOLDER)) continue
-
-          const replacementText = nextText.slice(ANNOTATION_TEXT_PLACEHOLDER.length)
-          if (!replacementText) continue
-
-          replacements.push({
-            id: next.id,
-            type: 'arrow',
-            props: {
-              richText: toRichText(replacementText)
-            }
-          })
-        }
-
-        if (replacements.length === 0) return
-
-        isReplacingAnnotationPlaceholder = true
-        try {
-          editor.updateShapes(replacements)
-        } finally {
-          isReplacingAnnotationPlaceholder = false
-        }
-      },
-      {
-        source: 'user',
-        scope: 'document'
       }
     )
 
@@ -814,20 +883,22 @@ export default function App() {
     return () => {
       window.clearTimeout(saveTimer)
       window.clearInterval(selectionStateTimer)
+      window.clearInterval(viewStateTimer)
       if (window.__cowartEditor === editor) {
         delete window.__cowartEditor
         delete window.__cowartSelection
+        delete window.__cowartViewState
       }
       document.getElementById(SELECTION_STATE_ELEMENT_ID)?.remove()
       unsubscribe()
       unsubscribeAnnotationEditingToolLock()
-      unsubscribeAnnotationPlaceholderReplacement()
       unsubscribeAnnotationColorSync()
+      syncViewState()
       saveCanvas()
     }
-  }, [])
+  }, [viewState])
 
-  if (snapshot === undefined) {
+  if (snapshot === undefined || viewState === undefined) {
     return (
       <main className="cowart-status" aria-live="polite">
         Loading canvas...
