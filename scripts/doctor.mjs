@@ -4,6 +4,8 @@ import { join } from 'node:path'
 const root = new URL('..', import.meta.url)
 
 const requiredFiles = [
+  '.nvmrc',
+  'CONTRIBUTING.md',
   'index.html',
   'package.json',
   'vite.config.js',

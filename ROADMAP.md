@@ -4,7 +4,7 @@ This roadmap keeps near-term improvements small and practical.
 
 ## Reliability
 
-- Add a smoke test for starting the local canvas service.
+- Extend smoke coverage for the local canvas service and health endpoint.
 - Validate MCP tool responses against expected schemas.
 - Improve error messages when the canvas service is not running.
 - Add recovery guidance for malformed canvas snapshots.
@@ -20,5 +20,5 @@ This roadmap keeps near-term improvements small and practical.
 
 - Clarify licensing with the original author before adding an OSS license.
 - Keep the legacy `cowart-imgae-gen` skill name working until users migrate to `cowart-image-gen`.
-- Add contribution guidelines once the public API stabilizes.
+- Expand contribution guidelines once the public API stabilizes.
 - Add CI checks for install, doctor, and production build.

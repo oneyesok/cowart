@@ -137,6 +137,8 @@ Cowart is still an early-stage project. It is useful for trusted local creative 
 - The default service binds to `127.0.0.1:43217`.
 - Canvas data is written into the active project's `canvas/` directory.
 - See [SECURITY.md](SECURITY.md) for local-first safety notes.
+- Local service health check: `http://127.0.0.1:43217/api/health`.
+- See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidance.
 - See [ROADMAP.md](ROADMAP.md) for near-term improvements.
 - The upstream repository does not currently include an open source license. See [LICENSING.md](LICENSING.md) before reuse.
 
@@ -146,6 +148,7 @@ Cowart is still an early-stage project. It is useful for trusted local creative 
 npm install
 npm run doctor
 npm run test:smoke
+npm run check
 npm run dev
 npm run build
 ```

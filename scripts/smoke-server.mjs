@@ -59,6 +59,11 @@ child.stderr.on('data', (chunk) => { output += chunk.toString() })
 try {
   await waitForServer()
 
+  const health = await fetchJson('/api/health')
+  if (health.ok !== true || health.name !== 'cowart-canvas') {
+    throw new Error('health endpoint did not return a healthy Cowart payload')
+  }
+
   const selection = await fetchJson('/api/selection')
   if (!Array.isArray(selection.selection?.selectedShapes)) {
     throw new Error('selection endpoint did not return selectedShapes')

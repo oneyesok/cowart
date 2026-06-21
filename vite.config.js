@@ -18,6 +18,7 @@ const globalAssetsRoute = '/assets/'
 const pageAssetsRoute = '/page-assets/'
 const canvasEventClients = new Set()
 let canvasEventVersion = 0
+const appVersion = process.env.npm_package_version ?? '0.1.2'
 
 const mimeTypes = new Map([
   ['.apng', 'image/apng'],
@@ -469,6 +470,31 @@ function canvasStoragePlugin() {
     name: 'cowart-canvas-storage',
     configureServer(server) {
       server.middlewares.use(serveCanvasAsset)
+
+      server.middlewares.use('/api/health', async (req, res) => {
+        try {
+          if (req.method !== 'GET') {
+            res.statusCode = 405
+            res.setHeader('allow', 'GET')
+            res.end()
+            return
+          }
+
+          const canvas = await loadCanvasSnapshot()
+          sendJson(res, 200, {
+            ok: true,
+            name: 'cowart-canvas',
+            version: appVersion,
+            projectDir,
+            canvasDir,
+            storage: canvas.storage,
+            canvasPath: canvas.path,
+            updatedAt: new Date().toISOString()
+          })
+        } catch (error) {
+          sendJson(res, 500, { ok: false, error: error.message })
+        }
+      })
 
       server.middlewares.use('/api/canvas-events', (req, res) => {
         if (req.method !== 'GET') {
