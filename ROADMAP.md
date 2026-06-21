@@ -21,4 +21,4 @@ This roadmap keeps near-term improvements small and practical.
 - Clarify licensing with the original author before adding an OSS license.
 - Keep the legacy `cowart-imgae-gen` skill name working until users migrate to `cowart-image-gen`.
 - Expand contribution guidelines once the public API stabilizes.
-- Add CI checks for install, doctor, and production build.
+- Keep issue templates, API docs, CI checks, and dependency updates aligned as the project grows.

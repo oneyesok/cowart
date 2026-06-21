@@ -6,6 +6,11 @@ const root = new URL('..', import.meta.url)
 const requiredFiles = [
   '.nvmrc',
   'CONTRIBUTING.md',
+  'docs/API.md',
+  '.github/dependabot.yml',
+  '.github/pull_request_template.md',
+  '.github/ISSUE_TEMPLATE/bug_report.yml',
+  '.github/ISSUE_TEMPLATE/feature_request.yml',
   'index.html',
   'package.json',
   'vite.config.js',
@@ -75,6 +80,8 @@ try {
   }
   if (!readme.includes('cowart-image-gen')) fail('README should document the corrected cowart-image-gen skill name')
   else pass('README documents the corrected image generation skill name')
+  if (!readme.includes('docs/API.md')) fail('README should link to API documentation')
+  else pass('README links to API documentation')
   if (!readme.includes('http://127.0.0.1:43217')) fail('README should document the default local URL')
   else pass('README documents the default local URL')
 } catch (error) {

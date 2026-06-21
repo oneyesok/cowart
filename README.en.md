@@ -140,6 +140,7 @@ Cowart is still an early-stage project. It is useful for trusted local creative 
 - Local service health check: `http://127.0.0.1:43217/api/health`.
 - See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidance.
 - See [ROADMAP.md](ROADMAP.md) for near-term improvements.
+- See [docs/API.md](docs/API.md) for HTTP API and MCP tool details.
 - The upstream repository does not currently include an open source license. See [LICENSING.md](LICENSING.md) before reuse.
 
 ## Local Development

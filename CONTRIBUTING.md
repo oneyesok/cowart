@@ -26,6 +26,15 @@ This runs the project doctor, production build, local server smoke test, and MCP
 - Add or update smoke coverage when changing Vite middleware or MCP-facing endpoints.
 - Run `npm run test:mcp` when changing `mcp/server.mjs` or tool schemas.
 - Document user-facing behavior in both `README.md` and `README.en.md` when practical.
+- Update [docs/API.md](docs/API.md) when changing HTTP endpoints or MCP tools.
+
+## Pull requests
+
+Use the pull request template and include:
+
+- a short summary of the change
+- verification output, usually `npm run check`
+- notes about compatibility or local-storage behavior when relevant
 
 ## Licensing
 
