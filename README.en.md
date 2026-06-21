@@ -126,7 +126,8 @@ Codex reads the notes and arrows in the screenshot, generates a clean revised im
 ## Skills
 
 - `cowart:cowart-open-canvas`: open the local Cowart canvas.
-- `cowart:cowart-imgae-gen`: insert a generated image into the selected AI image holder. The current name keeps the legacy typo for compatibility; a future migration should use `cowart-image-gen`.
+- `cowart:cowart-image-gen`: insert a generated image into the selected AI image holder.
+- `cowart:cowart-imgae-gen`: legacy compatibility entrypoint with the historical typo; new usage should migrate to `cowart-image-gen`.
 - `cowart:cowart-image-edit`: generate a revised image from a user-provided Cowart annotation screenshot.
 
 ## Project status
@@ -144,6 +145,7 @@ Cowart is still an early-stage project. It is useful for trusted local creative 
 ```bash
 npm install
 npm run doctor
+npm run test:smoke
 npm run dev
 npm run build
 ```

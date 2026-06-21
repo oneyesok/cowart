@@ -5,6 +5,8 @@ description: Generate a final AI bitmap into the selected Cowart "AI 图片" hol
 
 # Cowart Imgae Gen
 
+Compatibility note: this skill keeps the historical misspelled name. Prefer the canonical `cowart-image-gen` skill for new prompts and documentation.
+
 Use this skill when the selected Cowart canvas shape is an `AI 图片` holder created by the Cowart toolbar.
 
 ## Preconditions

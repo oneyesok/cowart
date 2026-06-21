@@ -19,6 +19,6 @@ This roadmap keeps near-term improvements small and practical.
 ## Open source hygiene
 
 - Clarify licensing with the original author before adding an OSS license.
-- Keep the legacy `cowart-imgae-gen` skill name working until users migrate.
+- Keep the legacy `cowart-imgae-gen` skill name working until users migrate to `cowart-image-gen`.
 - Add contribution guidelines once the public API stabilizes.
 - Add CI checks for install, doctor, and production build.

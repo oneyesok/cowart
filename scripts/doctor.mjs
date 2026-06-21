@@ -13,11 +13,13 @@ const requiredFiles = [
   '.codex-plugin/plugin.json',
   '.mcp.json',
   'scripts/start-canvas.sh',
+  'scripts/smoke-server.mjs',
   'skills/cowart-open-canvas/SKILL.md',
-  'skills/cowart-image-edit/SKILL.md'
+  'skills/cowart-image-edit/SKILL.md',
+  'skills/cowart-image-gen/SKILL.md'
 ]
 
-const expectedSkillNames = ['cowart-open-canvas', 'cowart-image-edit']
+const expectedSkillNames = ['cowart-open-canvas', 'cowart-image-edit', 'cowart-image-gen']
 
 async function fileExists(relativePath) {
   await access(new URL(relativePath, root))
@@ -68,6 +70,8 @@ try {
   if (readme.includes('cowart-imgae-gen')) {
     console.warn('! README still mentions legacy typo cowart-imgae-gen for compatibility')
   }
+  if (!readme.includes('cowart-image-gen')) fail('README should document the corrected cowart-image-gen skill name')
+  else pass('README documents the corrected image generation skill name')
   if (!readme.includes('http://127.0.0.1:43217')) fail('README should document the default local URL')
   else pass('README documents the default local URL')
 } catch (error) {

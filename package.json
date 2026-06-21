@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "doctor": "node scripts/doctor.mjs",
-    "check": "npm run doctor && npm run build",
+    "test:smoke": "node scripts/smoke-server.mjs",
+    "check": "npm run doctor && npm run build && npm run test:smoke",
     "build": "vite build",
     "preview": "vite preview"
   },
