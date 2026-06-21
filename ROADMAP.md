@@ -5,7 +5,7 @@ This roadmap keeps near-term improvements small and practical.
 ## Reliability
 
 - Extend smoke coverage for the local canvas service and health endpoint.
-- Validate MCP tool responses against expected schemas.
+- Extend MCP protocol tests to validate tool response schemas and error paths.
 - Improve error messages when the canvas service is not running.
 - Add recovery guidance for malformed canvas snapshots.
 

@@ -9,8 +9,9 @@
   "scripts": {
     "dev": "vite",
     "doctor": "node scripts/doctor.mjs",
+    "test:mcp": "node scripts/test-mcp.mjs",
     "test:smoke": "node scripts/smoke-server.mjs",
-    "check": "npm run doctor && npm run build && npm run test:smoke",
+    "check": "npm run doctor && npm run build && npm run test:smoke && npm run test:mcp",
     "build": "vite build",
     "preview": "vite preview"
   },

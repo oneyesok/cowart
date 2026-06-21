@@ -16,6 +16,7 @@ const requiredFiles = [
   '.mcp.json',
   'scripts/start-canvas.sh',
   'scripts/smoke-server.mjs',
+  'scripts/test-mcp.mjs',
   'skills/cowart-open-canvas/SKILL.md',
   'skills/cowart-image-edit/SKILL.md',
   'skills/cowart-image-gen/SKILL.md'

@@ -148,6 +148,7 @@ Cowart is still an early-stage project. It is useful for trusted local creative 
 npm install
 npm run doctor
 npm run test:smoke
+npm run test:mcp
 npm run check
 npm run dev
 npm run build
