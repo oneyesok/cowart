@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "doctor": "node scripts/doctor.mjs",
+    "check": "npm run doctor && npm run build",
     "build": "vite build",
     "preview": "vite preview"
   },

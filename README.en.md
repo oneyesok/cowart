@@ -126,13 +126,24 @@ Codex reads the notes and arrows in the screenshot, generates a clean revised im
 ## Skills
 
 - `cowart:cowart-open-canvas`: open the local Cowart canvas.
-- `cowart:cowart-imgae-gen`: insert a generated image into the selected AI image holder.
+- `cowart:cowart-imgae-gen`: insert a generated image into the selected AI image holder. The current name keeps the legacy typo for compatibility; a future migration should use `cowart-image-gen`.
 - `cowart:cowart-image-edit`: generate a revised image from a user-provided Cowart annotation screenshot.
+
+## Project status
+
+Cowart is still an early-stage project. It is useful for trusted local creative workflows, but it should not be exposed as a public web service.
+
+- The default service binds to `127.0.0.1:43217`.
+- Canvas data is written into the active project's `canvas/` directory.
+- See [SECURITY.md](SECURITY.md) for local-first safety notes.
+- See [ROADMAP.md](ROADMAP.md) for near-term improvements.
+- The upstream repository does not currently include an open source license. See [LICENSING.md](LICENSING.md) before reuse.
 
 ## Local Development
 
 ```bash
 npm install
+npm run doctor
 npm run dev
 npm run build
 ```

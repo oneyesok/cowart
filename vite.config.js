@@ -620,6 +620,16 @@ function canvasStoragePlugin() {
 
 export default defineConfig({
   plugins: [react(), canvasStoragePlugin()],
+  build: {
+    chunkSizeWarningLimit: 2000,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          tldraw: ['tldraw']
+        }
+      }
+    }
+  },
   server: {
     host: '127.0.0.1',
     port: 43217
